@@ -14,20 +14,20 @@ struct Cli {
     input: PathBuf,
 }
 
-#[derive(Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 enum ColorMode {
     ColorPalette4bpc,
     ColorPalette8bpc,
     Rgb555_16bpc,
-    Rgb888_24bpc,
-    Rgb888_32bpc,
+    Bgr888_24bpc,
+    Bgra888_32bpc,
 }
 
 impl ColorMode {
     fn is_2834(&self) -> bool {
         match self {
             ColorMode::ColorPalette4bpc | ColorMode::ColorPalette8bpc => true,
-            ColorMode::Rgb888_24bpc => true,
+            ColorMode::Bgr888_24bpc => true,
             _ => false,
         }
     }
@@ -35,7 +35,14 @@ impl ColorMode {
     fn has_padding(&self) -> bool {
         match self {
             ColorMode::ColorPalette4bpc | ColorMode::ColorPalette8bpc => true,
-            ColorMode::Rgb888_24bpc => true,
+            ColorMode::Bgr888_24bpc => true,
+            _ => false,
+        }
+    }
+
+    fn is_colorpalette(&self) -> bool {
+        match self {
+            ColorMode::ColorPalette4bpc | ColorMode::ColorPalette8bpc => true,
             _ => false,
         }
     }
@@ -60,13 +67,22 @@ fn main() {
         4 => ColorMode::ColorPalette4bpc,
         8 => ColorMode::ColorPalette8bpc,
         16 => ColorMode::Rgb555_16bpc,
-        24 => ColorMode::Rgb888_24bpc,
-        32 => ColorMode::Rgb888_32bpc,
+        24 => ColorMode::Bgr888_24bpc,
+        32 => ColorMode::Bgra888_32bpc,
         _ => panic!("Unsupported bitdepth"),
     };
 
-    println!("Width: {}", header.width);
-    println!("Height: {}", header.height);
+    if color_mode.is_colorpalette() {
+        println!(
+            "{}x{} {:?} ({} Colors)",
+            header.width,
+            header.height,
+            color_mode,
+            header.colorpalette.len()
+        );
+    } else {
+        println!("{}x{} {:?}", header.width, header.height, color_mode,);
+    }
 
     let estimate_constant_value = if color_mode.is_2834() { 2834 } else { 0 };
 
@@ -77,26 +93,12 @@ fn main() {
         );
     }
 
-    let estimate_bitmap_image_size = match color_mode {
-        ColorMode::ColorPalette8bpc | ColorMode::ColorPalette4bpc => 0,
-        ColorMode::Rgb888_24bpc => 0,
-        ColorMode::Rgb555_16bpc => header.width * header.height * 2,
-        ColorMode::Rgb888_32bpc => header.width * header.height * 4,
-    };
-
-    if header.bitmap_image_size != estimate_bitmap_image_size {
-        println!(
-            "WARNING: Unknown bitmap image size is comming: {}",
-            header.bitmap_image_size
-        );
-    }
-
     let image_start_at = 0x28 + 4 * header.colorpalette.len();
 
     if !color_mode.has_padding() {
         let body_len = match color_mode {
             ColorMode::Rgb555_16bpc => header.width * header.height * 2,
-            ColorMode::Rgb888_32bpc => header.width * header.height * 4,
+            ColorMode::Bgra888_32bpc => header.width * header.height * 4,
             _ => unreachable!(),
         } as usize;
 
@@ -112,88 +114,117 @@ fn main() {
 
     let mut rgba_buffer = vec![];
 
-    let consume_count = match color_mode {
-        ColorMode::ColorPalette4bpc => (((header.width + 1) * 2) / 2 * header.height + 1) / 2,
-        ColorMode::Rgb888_24bpc => (header.width * header.height + 1) / 2,
-        _ => header.width * header.height,
+    let estimate_row_length = match color_mode {
+        ColorMode::ColorPalette4bpc => (header.width + 1) / 2,
+        ColorMode::ColorPalette8bpc => header.width,
+        ColorMode::Rgb555_16bpc => header.width * 2,
+        ColorMode::Bgr888_24bpc => header.width * 3,
+        ColorMode::Bgra888_32bpc => header.width * 4,
     };
 
-    for _n in 0..consume_count {
+    // calculate row alignment (4-bytes)
+    let estimate_row_length = ((estimate_row_length + 3) / 4) * 4;
+
+    // Check bitmap image size
+    let estimate_bitmap_image_size = match color_mode {
+        ColorMode::ColorPalette8bpc | ColorMode::ColorPalette4bpc => 0,
+        ColorMode::Bgr888_24bpc => 0,
+        ColorMode::Rgb555_16bpc => estimate_row_length * header.height,
+        ColorMode::Bgra888_32bpc => estimate_row_length * header.height,
+    };
+
+    if header.bitmap_image_size != estimate_bitmap_image_size {
+        println!(
+            "WARNING: Unknown bitmap image size is comming: {}",
+            header.bitmap_image_size
+        );
+    }
+
+    for _h in 0..header.height {
+        let mut line_buffer = vec![0; estimate_row_length as usize];
+        buffer.read_exact(&mut line_buffer).unwrap();
+
         match color_mode {
             ColorMode::ColorPalette4bpc => {
-                let mut color_indexes = [0];
-                buffer.read_exact(&mut color_indexes).unwrap();
+                for _w in 0..header.width {
+                    let byte_index = _w / 2;
+                    let mut color_index = line_buffer[byte_index as usize];
 
-                let color = &header.colorpalette[(color_indexes[0] >> 4) as usize];
-                rgba_buffer.extend_from_slice(&[color.r, color.g, color.b, 255 - color.a]);
+                    let is_high = _w & 1 == 0;
 
-                let is_eol = _n != 0 && ((_n + 1) % ((header.width + 1) / 2)) == 0;
+                    if is_high {
+                        color_index >>= 4;
+                    } else {
+                        color_index &= 0xF;
+                    }
 
-                if !is_eol || header.width % 2 == 0 {
-                    let color = &header.colorpalette[(color_indexes[0] & 0x0F) as usize];
+                    let color = &header.colorpalette[color_index as usize];
                     rgba_buffer.extend_from_slice(&[color.r, color.g, color.b, 255 - color.a]);
                 }
-
-                if is_eol {
-                    println!("pos: {:x}", buffer.position());
-
-                    if buffer.position() & 0b11 != 0 {
-                        println!("newpos: {:x}", ((buffer.position() & !0b11) + 4));
-                        buffer.set_position((buffer.position() & !0b11) + 4);
-                    }
-                }
-            }
-            ColorMode::Rgb888_24bpc => {
-                let mut rgbrgbaa = [0; 8];
-                buffer.read_exact(&mut rgbrgbaa).unwrap();
-                rgba_buffer.extend_from_slice(&[rgbrgbaa[0], rgbrgbaa[1], rgbrgbaa[2], 0xFF]);
-                rgba_buffer.extend_from_slice(&[rgbrgbaa[3], rgbrgbaa[4], rgbrgbaa[5], 0xFF]);
             }
             ColorMode::ColorPalette8bpc => {
-                let mut color_index = [0];
+                for _w in 0..header.width {
+                    let color_index = line_buffer[_w as usize];
+                    let color = &header.colorpalette[color_index as usize];
+                    rgba_buffer.extend_from_slice(&[color.r, color.g, color.b, 255 - color.a]);
+                }
+            }
+            ColorMode::Bgr888_24bpc => {
+                for _w in 0..header.width {
+                    let base = (_w * 3) as usize;
 
-                buffer.read_exact(&mut color_index).unwrap();
-
-                let color = &header.colorpalette[color_index[0] as usize];
-                rgba_buffer.extend_from_slice(&[color.r, color.g, color.b, 255 - color.a]);
-
-                if _n != 0 && (_n + 1) % header.width == 0 {
-                    println!("pos: {:x}", buffer.position());
-
-                    if buffer.position() & 0b11 != 0 {
-                        println!("newpos: {:x}", ((buffer.position() & !0b11) + 4));
-                        buffer.set_position((buffer.position() & !0b11) + 4);
-                    }
+                    rgba_buffer.extend_from_slice(&[
+                        // R
+                        line_buffer[base + 2],
+                        // G
+                        line_buffer[base + 1],
+                        // B
+                        line_buffer[base + 0],
+                        // A
+                        0xFF,
+                    ]);
                 }
             }
             ColorMode::Rgb555_16bpc => {
-                let mut rgb555 = [0; 2];
-                buffer.read_exact(&mut rgb555).unwrap();
+                for _w in 0..header.width {
+                    let base = (_w * 2) as usize;
 
-                let mut rgb555 = u16::from_le_bytes(rgb555);
-                let b = rgb555 & 0b11111;
-                rgb555 >>= 5;
+                    let mut rgb555 =
+                        u16::from_le_bytes([line_buffer[base + 0], line_buffer[base + 1]]);
 
-                let g = rgb555 & 0b11111;
-                rgb555 >>= 5;
+                    let b = rgb555 & 0b11111;
+                    rgb555 >>= 5;
 
-                let r = rgb555 & 0b11111;
+                    let g = rgb555 & 0b11111;
+                    rgb555 >>= 5;
 
-                let r = r * 33 / 4;
-                let g = g * 33 / 4;
-                let b = b * 33 / 4;
+                    let r = rgb555 & 0b11111;
 
-                rgba_buffer.extend_from_slice(&[r as u8, g as u8, b as u8, 255 as u8]);
+                    let r = r * 33 / 4;
+                    let g = g * 33 / 4;
+                    let b = b * 33 / 4;
+
+                    rgba_buffer.extend_from_slice(&[r as u8, g as u8, b as u8, 255 as u8]);
+                }
             }
-            ColorMode::Rgb888_32bpc => {
-                let mut rgba = [0; 4];
-                buffer.read_exact(&mut rgba).unwrap();
-                rgba_buffer.extend_from_slice(&rgba);
+            ColorMode::Bgra888_32bpc => {
+                for _w in 0..header.width {
+                    let base = (_w * 4) as usize;
+
+                    rgba_buffer.extend_from_slice(&[
+                        // R
+                        line_buffer[base + 2],
+                        // G
+                        line_buffer[base + 1],
+                        // B
+                        line_buffer[base + 0],
+                        // A
+                        255 - line_buffer[base + 3],
+                    ]);
+                }
             }
         }
     }
-
-    println!("{}", rgba_buffer.len());
 
     let image_buffer =
         ImageBuffer::<Rgba<u8>, _>::from_raw(header.width, header.height, rgba_buffer).unwrap();
