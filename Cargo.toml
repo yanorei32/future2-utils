@@ -1,5 +1,5 @@
 [package]
-name = "future-util"
+name = "future2-util"
 version = "0.1.0"
 edition = "2024"
 
@@ -9,17 +9,17 @@ clap = { version = "4.5.47", features = ["derive"] }
 image = "0.25.8"
 
 [[bin]]
-name = "future-bigfile-unpack"
+name = "future2-bigfile-unpack"
 path = "src/bigfile-unpack.rs"
 
 [[bin]]
-name = "future-bigfile-pack"
+name = "future2-bigfile-pack"
 path = "src/bigfile-pack.rs"
 
 [[bin]]
-name = "future-image-encode"
+name = "future2-image-encode"
 path = "src/image-encode.rs"
 
 [[bin]]
-name = "future-image-decode"
+name = "future2-image-decode"
 path = "src/image-decode.rs"
