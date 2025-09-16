@@ -1,0 +1,25 @@
+[package]
+name = "future-util"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+binrw = "0.15.0"
+clap = { version = "4.5.47", features = ["derive"] }
+image = "0.25.8"
+
+[[bin]]
+name = "future-bigfile-unpack"
+path = "src/bigfile-unpack.rs"
+
+[[bin]]
+name = "future-bigfile-pack"
+path = "src/bigfile-pack.rs"
+
+[[bin]]
+name = "future-image-encode"
+path = "src/image-encode.rs"
+
+[[bin]]
+name = "future-image-decode"
+path = "src/image-decode.rs"
