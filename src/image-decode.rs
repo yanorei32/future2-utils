@@ -6,7 +6,7 @@ use binrw::BinRead;
 use clap::Parser;
 use image::{DynamicImage, ImageBuffer, Rgba};
 
-use future_util::ImageFile;
+use future2_util::ImageFile;
 
 #[derive(Parser)]
 struct Cli {

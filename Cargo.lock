@@ -410,7 +410,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "future-util"
+name = "future2-util"
 version = "0.1.0"
 dependencies = [
  "binrw",

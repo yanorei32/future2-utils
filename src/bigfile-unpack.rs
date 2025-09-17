@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use binrw::BinRead;
 use clap::Parser;
 
-use future_util::BigFile;
+use future2_util::BigFile;
 
 #[derive(Parser)]
 struct Cli {
