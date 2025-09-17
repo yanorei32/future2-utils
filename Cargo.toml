@@ -28,3 +28,7 @@ path = "src/image-decode.rs"
 [[bin]]
 name = "future2-s10-unpack"
 path = "src/s10-unpack.rs"
+
+[[bin]]
+name = "future2-s10-pack"
+path = "src/s10-pack.rs"
