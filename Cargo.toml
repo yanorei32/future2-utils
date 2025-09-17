@@ -7,6 +7,7 @@ edition = "2024"
 binrw = "0.15.0"
 clap = { version = "4.5.47", features = ["derive"] }
 image = "0.25.8"
+utf16string = "0.2.0"
 
 [[bin]]
 name = "future2-bigfile-unpack"
