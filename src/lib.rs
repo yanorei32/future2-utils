@@ -61,3 +61,36 @@ pub struct ImageFile {
     #[br(count = colorpalette_size)]
     pub colorpalette: Vec<ImageColor>,
 }
+
+#[binrw]
+#[derive(Debug)]
+pub struct S10StrFileDescriptor {
+    pub start_at: u32,
+    pub size: u32,
+    pub unknown1: u32,
+    pub unknown2: u32,
+    pub unknown3: u32,
+    pub unknown4: u32,
+    pub unknown5: u32,
+    pub unknown6: u32,
+    pub unknown7: u32,
+    pub unknown8: u32,
+    pub pad: [u32; 122],
+}
+
+#[binrw]
+#[derive(Debug)]
+pub struct S10StrFile {
+    #[bw(try_calc(u32::try_from(file_descriptors.len())))]
+    pub file_count: u32,
+
+    pub unknown0: u32,
+    pub unknown1: u32,
+    pub unknown2: u32,
+    pub unknown3: u32,
+
+    pub pad: [u32; 126],
+
+    #[br(count = file_count)]
+    pub file_descriptors: Vec<S10StrFileDescriptor>,
+}
