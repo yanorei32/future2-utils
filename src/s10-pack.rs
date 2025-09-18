@@ -6,7 +6,7 @@ use binrw::BinWrite;
 use clap::Parser;
 use utf16string::{LE, WString};
 
-use future2_util::{S10StrFile, S10StrFileDescriptor};
+use future2_utils::{S10StrFile, S10StrFileDescriptor};
 
 #[derive(Parser)]
 struct Cli {
