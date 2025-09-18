@@ -24,6 +24,11 @@ $ future2-image-decode -i /mnt/r/Stad20.big.0.data
 
 In this case, the output file name is: `Stad20.big.0.data.png`
 
+> [!TIP]
+> After creating the image decoder without any hints (and, in fact, after consulting Microsoft Copilot (GPT‑5)),
+> I realized that the original format of this image file appears to be a BMP without a BMP header.
+> Therefore, this incomplete tool is deprecated.
+
 ## future2-image-encode
 
 ```
@@ -32,6 +37,10 @@ $ future2-image-encode -i /mnt/r/Stad20.big.0.data.png
 
 In this case, the output file name is: `Stad20.big.0.data.png.data`
 
+> [!TIP]
+> After creating the image decoder without any hints (and, in fact, after consulting Microsoft Copilot (GPT‑5)),
+> I realized that the original format of this image file appears to be a BMP without a BMP header.
+> Therefore, this incomplete tool is deprecated.
 
 ## future2-s10-unpack
 
