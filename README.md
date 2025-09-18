@@ -7,40 +7,11 @@
 $ future2-bigfile-unpack -i Stad12.big
 ```
 
-<img width="267" src="https://github.com/user-attachments/assets/9ffb4572-b79f-4fa4-a219-df1cde205354" />
-
 ## future2-bigfile-pack
 
 ```
-$ future2-bigfile-pack -i MyStad12.big.0.data -i MyStad12.big.1.data -i MyStad12.big.2.data -o MyStad12.big
+$ future2-bigfile-pack -i MyStad12.big.0.bmp -i MyStad12.big.1.bmp -i MyStad12.big.2.bmp -o MyStad12.big
 ```
-
-## future2-image-decode
-
-```
-$ future2-image-decode -i /mnt/r/Stad20.big.0.data
-450x357 Rgb555_16bpc
-```
-
-In this case, the output file name is: `Stad20.big.0.data.png`
-
-> [!TIP]
-> After creating the image decoder without any hints (and, in fact, after consulting Microsoft Copilot (GPT‑5)),
-> I realized that the original format of this image file appears to be a BMP without a BMP header.
-> Therefore, this incomplete tool is deprecated.
-
-## future2-image-encode
-
-```
-$ future2-image-encode -i /mnt/r/Stad20.big.0.data.png
-```
-
-In this case, the output file name is: `Stad20.big.0.data.png.data`
-
-> [!TIP]
-> After creating the image decoder without any hints (and, in fact, after consulting Microsoft Copilot (GPT‑5)),
-> I realized that the original format of this image file appears to be a BMP without a BMP header.
-> Therefore, this incomplete tool is deprecated.
 
 ## future2-s10-unpack
 

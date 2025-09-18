@@ -1,5 +1,5 @@
 use std::fs::{File, OpenOptions};
-use std::io::{Read, Write};
+use std::io::{BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 
 use binrw::BinWrite;
@@ -21,10 +21,18 @@ struct Cli {
 
 fn read_file(p: &Path) -> Vec<u8> {
     let mut buffer = vec![];
-    let mut input = File::open(p).expect("Failed to open input file");
+    let mut input = BufReader::new(File::open(p).expect("Failed to open input file"));
+
+    const BITMAP_FILE_HEADER_SIZE: i64 = 14;
+
+    input
+        .seek_relative(BITMAP_FILE_HEADER_SIZE)
+        .expect("Invalid input BMP size");
+
     input
         .read_to_end(&mut buffer)
         .expect("Failed to read input file");
+
     buffer
 }
 
