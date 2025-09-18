@@ -6,7 +6,7 @@ use binrw::BinWrite;
 use clap::Parser;
 use image::ImageReader;
 
-use future2_utils::ImageFile;
+use future2_utils::BitmapInfoHeader;
 
 #[derive(Parser)]
 struct Cli {
@@ -42,11 +42,13 @@ fn main() {
 
     let mut output = BufWriter::new(output);
 
-    let image = ImageFile {
-        bit_depth: 32,
-        bitmap_image_size: img.width() * img.height() * 4,
+    let image = BitmapInfoHeader {
+        bit_count: 32,
+        compression: 0,
+        size_image: img.width() * img.height() * 4,
         colorpalette: vec![],
-        constant_2834_if_colorpalette_use_otherwise_0: 0,
+        x_pels_per_meter: 0,
+        y_pels_per_meter: 0,
         width: img.width(),
         height: img.height(),
     };

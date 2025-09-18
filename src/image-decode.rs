@@ -6,7 +6,7 @@ use binrw::BinRead;
 use clap::Parser;
 use image::{DynamicImage, ImageBuffer, Rgba};
 
-use future2_utils::ImageFile;
+use future2_utils::BitmapInfoHeader;
 
 #[derive(Parser)]
 struct Cli {
@@ -24,22 +24,6 @@ enum ColorMode {
 }
 
 impl ColorMode {
-    fn is_2834(&self) -> bool {
-        match self {
-            ColorMode::ColorPalette4bpc | ColorMode::ColorPalette8bpc => true,
-            ColorMode::Bgr888_24bpc => true,
-            _ => false,
-        }
-    }
-
-    fn has_padding(&self) -> bool {
-        match self {
-            ColorMode::ColorPalette4bpc | ColorMode::ColorPalette8bpc => true,
-            ColorMode::Bgr888_24bpc => true,
-            _ => false,
-        }
-    }
-
     fn is_colorpalette(&self) -> bool {
         match self {
             ColorMode::ColorPalette4bpc | ColorMode::ColorPalette8bpc => true,
@@ -57,19 +41,17 @@ fn main() {
         .read_to_end(&mut buffer)
         .expect("Failed to read input file");
 
-    let filesize = buffer.len();
-
     let mut buffer = Cursor::new(buffer);
 
-    let header = ImageFile::read_le(&mut buffer).expect("Failed to read as BigFile");
+    let header = BitmapInfoHeader::read_le(&mut buffer).expect("Failed to read as DIB");
 
-    let color_mode = match header.bit_depth {
+    let color_mode = match header.bit_count {
         4 => ColorMode::ColorPalette4bpc,
         8 => ColorMode::ColorPalette8bpc,
         16 => ColorMode::Rgb555_16bpc,
         24 => ColorMode::Bgr888_24bpc,
         32 => ColorMode::Bgra888_32bpc,
-        _ => panic!("Unsupported bitdepth"),
+        _ => panic!("Unsupported biBitCount"),
     };
 
     if color_mode.is_colorpalette() {
@@ -84,31 +66,11 @@ fn main() {
         println!("{}x{} {:?}", header.width, header.height, color_mode,);
     }
 
-    let estimate_constant_value = if color_mode.is_2834() { 2834 } else { 0 };
-
-    if header.constant_2834_if_colorpalette_use_otherwise_0 != estimate_constant_value {
-        println!(
-            "WARNING: Unknown constant value is comming: {}",
-            header.constant_2834_if_colorpalette_use_otherwise_0
-        );
+    if header.compression != 0 {
+        panic!("Compressed image is not supported");
     }
 
     let image_start_at = 0x28 + 4 * header.colorpalette.len();
-
-    if !color_mode.has_padding() {
-        let body_len = match color_mode {
-            ColorMode::Rgb555_16bpc => header.width * header.height * 2,
-            ColorMode::Bgra888_32bpc => header.width * header.height * 4,
-            _ => unreachable!(),
-        } as usize;
-
-        if body_len + image_start_at != filesize {
-            panic!(
-                "Invalid Filesize Expect: (header_len: {image_start_at} + body_len: {body_len}) = {}, Expect: {filesize}",
-                body_len + image_start_at
-            );
-        }
-    }
 
     buffer.set_position(image_start_at as u64);
 
@@ -124,21 +86,6 @@ fn main() {
 
     // calculate row alignment (4-bytes)
     let estimate_row_length = ((estimate_row_length + 3) / 4) * 4;
-
-    // Check bitmap image size
-    let estimate_bitmap_image_size = match color_mode {
-        ColorMode::ColorPalette8bpc | ColorMode::ColorPalette4bpc => 0,
-        ColorMode::Bgr888_24bpc => 0,
-        ColorMode::Rgb555_16bpc => estimate_row_length * header.height,
-        ColorMode::Bgra888_32bpc => estimate_row_length * header.height,
-    };
-
-    if header.bitmap_image_size != estimate_bitmap_image_size {
-        println!(
-            "WARNING: Unknown bitmap image size is comming: {}",
-            header.bitmap_image_size
-        );
-    }
 
     for _h in 0..header.height {
         let mut line_buffer = vec![0; estimate_row_length as usize];

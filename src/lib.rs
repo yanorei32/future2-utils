@@ -1,3 +1,5 @@
+#![allow(unused_variables)]
+
 use binrw::binrw;
 
 #[binrw]
@@ -21,7 +23,7 @@ pub struct BigFile {
 
 #[binrw]
 #[derive(Debug)]
-pub struct ImageColor {
+pub struct BitmapColor {
     pub b: u8,
     pub g: u8,
     pub r: u8,
@@ -30,37 +32,52 @@ pub struct ImageColor {
 
 #[binrw]
 #[derive(Debug)]
-pub struct ImageFile {
+pub struct BitmapInfoHeader {
     #[bw(calc(0x28))]
-    _header_size: u32,
+    _size: u32,
 
     pub width: u32,
     pub height: u32,
 
     #[bw(calc(1))]
-    _constant_1: u16,
+    _planes: u16,
 
-    pub bit_depth: u16,
+    pub bit_count: u16,
+
+    pub compression: u32,
+
+    pub size_image: u32,
+
+    pub x_pels_per_meter: u32,
+    pub y_pels_per_meter: u32,
+
+    #[bw(try_calc(u32::try_from(colorpalette.len())))]
+    pub clr_used: u32,
+
+    #[bw(try_calc(u32::try_from(colorpalette.len())))]
+    pub clr_important: u32,
+
+    #[br(count = clr_used)]
+    pub colorpalette: Vec<BitmapColor>,
+}
+
+#[binrw]
+#[derive(Debug)]
+pub struct BitmapFileHeader {
+    #[bw(calc(0x4d42))]
+    _signature: u16,
+
+    pub size: u32,
 
     #[bw(calc(0))]
-    _constant_0: u32,
+    reserved1: u16,
 
-    pub bitmap_image_size: u32,
+    #[bw(calc(0))]
+    reserved1: u16,
 
-    pub constant_2834_if_colorpalette_use_otherwise_0: u32,
-
-    #[bw(calc(*constant_2834_if_colorpalette_use_otherwise_0))]
-    _constant_2834_if_colorpalette_use_otherwise_0: u32,
-
-    #[bw(try_calc(u32::try_from(colorpalette.len())))]
-    pub colorpalette_size: u32,
-
-    #[bw(try_calc(u32::try_from(colorpalette.len())))]
-    _colorpalette_size: u32,
-
-    #[br(count = colorpalette_size)]
-    pub colorpalette: Vec<ImageColor>,
+    pub off_bits: u32,
 }
+
 
 #[binrw]
 #[derive(Debug)]

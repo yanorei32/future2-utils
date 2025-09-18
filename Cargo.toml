@@ -7,6 +7,7 @@ edition = "2024"
 binrw = "0.15.0"
 clap = { version = "4.5.47", features = ["derive"] }
 image = "0.25.8"
+indicatif = "0.18.0"
 utf16string = "0.2.0"
 
 [[bin]]
@@ -32,3 +33,11 @@ path = "src/s10-unpack.rs"
 [[bin]]
 name = "future2-s10-pack"
 path = "src/s10-pack.rs"
+
+[[bin]]
+name = "future2-dib2bmp"
+path = "src/dib2bmp.rs"
+
+[[bin]]
+name = "future2-bmp2dib"
+path = "src/bmp2dib.rs"
