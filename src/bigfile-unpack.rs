@@ -14,6 +14,9 @@ const BITMAP_INFO_HEADER_SIZE: u32 = 40;
 struct Cli {
     #[arg(short, long)]
     input: PathBuf,
+
+    #[arg(long, default_value_t = false)]
+    raw: bool,
 }
 
 fn main() {
@@ -49,39 +52,60 @@ fn main() {
             .iter_mut()
             .for_each(|v| *v ^= bigfile_header.encrypt_key);
 
-        // Get colorpalette size
-        let colorpalette_size = BitmapInfoHeader::read_le(&mut Cursor::new(&dib_content))
-            .expect("Failed to read DIB header")
-            .colorpalette
-            .len();
+        if cli.raw == false {
+            // Get colorpalette size
+            let colorpalette_size = BitmapInfoHeader::read_le(&mut Cursor::new(&dib_content))
+                .expect("Failed to read DIB header")
+                .colorpalette
+                .len();
 
-        let output_filename = &cli.input.with_file_name(format!(
-            "{}.{i}.bmp",
-            cli.input
-                .file_name()
-                .unwrap()
-                .to_os_string()
-                .to_string_lossy()
-        ));
+            let bmp_filename = &cli.input.with_file_name(format!(
+                "{}.{i}.bmp",
+                cli.input
+                    .file_name()
+                    .unwrap()
+                    .to_os_string()
+                    .to_string_lossy()
+            ));
 
-        let mut bmp = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(output_filename)
-            .expect("Failed to create output file");
+            let mut bmp = OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(bmp_filename)
+                .expect("Failed to create output file");
 
-        // Create BMP header
-        let size = BITMAP_FILE_HEADER_SIZE + file_descriptor.size;
+            // Create BMP header
+            let size = BITMAP_FILE_HEADER_SIZE + file_descriptor.size;
 
-        let off_bits =
-            BITMAP_FILE_HEADER_SIZE + BITMAP_INFO_HEADER_SIZE + colorpalette_size as u32 * 4;
+            let off_bits =
+                BITMAP_FILE_HEADER_SIZE + BITMAP_INFO_HEADER_SIZE + colorpalette_size as u32 * 4;
 
-        BitmapFileHeader { size, off_bits }
-            .write_le(&mut bmp)
-            .expect("Failed to write BMP header");
+            BitmapFileHeader { size, off_bits }
+                .write_le(&mut bmp)
+                .expect("Failed to write BMP header");
 
-        bmp.write_all(&dib_content)
-            .expect("Failed to write output file");
+            bmp.write_all(&dib_content)
+                .expect("Failed to write output file");
+        } else {
+            let dib_filename = &cli.input.with_file_name(format!(
+                "{}.{i}.dib",
+                cli.input
+                    .file_name()
+                    .unwrap()
+                    .to_os_string()
+                    .to_string_lossy()
+            ));
+
+            let mut dib = OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(dib_filename)
+                .expect("Failed to create output file");
+
+            dib.write_all(&dib_content)
+                .expect("Failed to write output file");
+        }
     }
 }
