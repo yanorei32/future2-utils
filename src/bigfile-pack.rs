@@ -15,23 +15,22 @@ struct Cli {
     #[arg(short, long, default_value_t = 0x29)]
     encrypt_key: u8,
 
-    #[arg(long, default_value_t = false)]
-    raw: bool,
-
     #[arg(short, long)]
     output: PathBuf,
 }
 
-fn read_file(p: &Path, raw: bool) -> Vec<u8> {
+fn read_file(p: &Path) -> Vec<u8> {
     let mut buffer = vec![];
     let mut input = BufReader::new(File::open(p).expect("Failed to open input file"));
 
     const BITMAP_FILE_HEADER_SIZE: i64 = 14;
 
-    if raw == false {
-        input
-            .seek_relative(BITMAP_FILE_HEADER_SIZE)
-            .expect("Invalid input BMP size");
+    if let Some(extension) = p.extension().map(|s| s.to_string_lossy()) {
+        if extension.to_lowercase() == "bmp" {
+            input
+                .seek_relative(BITMAP_FILE_HEADER_SIZE)
+                .expect("Invalid input BMP size");
+        }
     }
 
     input
@@ -43,7 +42,7 @@ fn read_file(p: &Path, raw: bool) -> Vec<u8> {
 
 fn main() {
     let cli = Cli::parse();
-    let mut files: Vec<_> = cli.inputs.iter().map(|path| read_file(path, cli.raw)).collect();
+    let mut files: Vec<_> = cli.inputs.iter().map(|path| read_file(path)).collect();
 
     // encrypt
     files.iter_mut().for_each(|file| {
