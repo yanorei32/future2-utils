@@ -6,8 +6,6 @@ edition = "2024"
 [dependencies]
 binrw = "0.15.0"
 clap = { version = "4.5.47", features = ["derive"] }
-image = "0.25.8"
-indicatif = "0.18.0"
 utf16string = "0.2.0"
 
 [[bin]]
