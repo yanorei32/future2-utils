@@ -25,12 +25,12 @@ fn read_file(p: &Path) -> Vec<u8> {
 
     const BITMAP_FILE_HEADER_SIZE: i64 = 14;
 
-    if let Some(extension) = p.extension().map(|s| s.to_string_lossy()) {
-        if extension.to_lowercase() == "bmp" {
-            input
-                .seek_relative(BITMAP_FILE_HEADER_SIZE)
-                .expect("Invalid input BMP size");
-        }
+    if let Some(extension) = p.extension().map(|s| s.to_string_lossy())
+        && extension.to_lowercase() == "bmp"
+    {
+        input
+            .seek_relative(BITMAP_FILE_HEADER_SIZE)
+            .expect("Invalid input BMP size");
     }
 
     input

@@ -78,7 +78,6 @@ pub struct BitmapFileHeader {
     pub off_bits: u32,
 }
 
-
 #[binrw]
 #[derive(Debug)]
 pub struct S10StrFileDescriptor {

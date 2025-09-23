@@ -41,24 +41,31 @@ fn main() {
         })
         .collect();
 
-    let titles: Vec<_> = cli.inputs.iter().map(|path| {
-        let title = path.file_stem().unwrap();
-        let title: &str = &title.to_string_lossy();
-        let title = WString::<LE>::from(title);
-        let title_buffer = title.into_bytes();
+    let titles: Vec<_> = cli
+        .inputs
+        .iter()
+        .map(|path| {
+            let title = path.file_stem().unwrap();
+            let title: &str = &title.to_string_lossy();
+            let title = WString::<LE>::from(title);
+            let title_buffer = title.into_bytes();
 
-        if title_buffer.len() > 520 {
-            panic!("Filename too long");
-        }
+            if title_buffer.len() > 520 {
+                panic!("Filename too long");
+            }
 
-        let mut buffer_with_pad = [0; 520];
+            let mut buffer_with_pad = [0; 520];
 
-        buffer_with_pad.iter_mut().zip(title_buffer).for_each(|(dest, src)| {
-            *dest = src;
-        });
+            buffer_with_pad
+                .iter_mut()
+                .zip(title_buffer)
+                .for_each(|(dest, src)| {
+                    *dest = src;
+                });
 
-        buffer_with_pad
-    }).collect();
+            buffer_with_pad
+        })
+        .collect();
 
     let file_descriptors: Vec<_> = files
         .iter()
@@ -71,9 +78,7 @@ fn main() {
         })
         .collect();
 
-    let s10file = S10StrFile {
-        file_descriptors,
-    };
+    let s10file = S10StrFile { file_descriptors };
 
     let mut output = OpenOptions::new()
         .write(true)

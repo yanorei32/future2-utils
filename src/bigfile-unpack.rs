@@ -52,7 +52,7 @@ fn main() {
             .iter_mut()
             .for_each(|v| *v ^= bigfile_header.encrypt_key);
 
-        if cli.raw == false {
+        if !cli.raw {
             // Get colorpalette size
             let colorpalette_size = BitmapInfoHeader::read_le(&mut Cursor::new(&dib_content))
                 .expect("Failed to read DIB header")
