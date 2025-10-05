@@ -16,7 +16,7 @@ $ future2-bigfile-pack -i MyStad12.big.0.bmp -i MyStad12.big.1.bmp -i MyStad12.b
 ## future2-s10-unpack
 
 ```
-$ future2-s10-pack -i Data/S10.str
+$ future2-s10-unpack -i Data/S10.str
 ```
 
 <img width="321" src="https://github.com/user-attachments/assets/c4874c4d-1617-41cd-bf5b-a6b123babbfd" />
